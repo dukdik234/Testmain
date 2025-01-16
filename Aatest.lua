@@ -784,7 +784,7 @@ local function Smart_Place(Type, uuid, maxcount, cost, upgrade)
         for _, unit in ipairs(UnitsFolder:GetChildren()) do
             if unit:FindFirstChild("_stats") and unit:FindFirstChild("_hitbox") then
                 local stats = unit._stats
-                if stats:FindFirstChild("player") and 
+                if stats:FindFirstChild("player") and stats:FindFirstChild("uuid") and
                    tostring(stats.player.Value) == Ply.Name and
                    Type == "Farm" and
                    tostring(stats.uuid.Value) == uuid then
@@ -798,7 +798,7 @@ local function Smart_Place(Type, uuid, maxcount, cost, upgrade)
     end 
 end
 task.spawn(function()
-    pcall(function()
+    --pcall(function()
         while task.wait() do
             if getgenv().Setting.Auto_Play and workspace._waves_started.Value == true then
                 if not workspace._MAP_CONFIG.IsLobby.Value then
@@ -827,7 +827,7 @@ task.spawn(function()
                 end
             end
         end
-    end)
+    --end)
 end)
 
 --[[
