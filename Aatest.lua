@@ -1,19 +1,34 @@
 repeat task.wait() until game:IsLoaded() or game.Players.LocalPlayer
 
 getgenv().Version = 1.1
-
-
+getgenv().Cloneref = cloneref or function(a) return a end 
 getgenv().Setting = {
     Unit_Equip = {},
     Select_tabs = {},
     Auto_Play = false,
     Show_unitplacement = false,
-    Place_any = false
+    Place_any = false,
+    Gamemode_Select = 'Story Mode',
+    Difficul_Select = nil,
+    Maps_Select = nil,
+    Maps_Select_Level = "1",
+    Auto_Join = false,
+    Auto_Selectmap = false,
+    Auto_Replay = false,
+    Back_Tolobby = false,
+    Auto_Next_Level= false,
+    Auto_Nextmap = false,
+    Auto_Worldskip = false,
+    friends_only = false,
+    Replay_methods = "Replay then Game Finish"
 }
-local Ply = game.Players.LocalPlayer
-local Rep = game:GetService("ReplicatedStorage")
-local Runs = game:GetService("RunService")
-local Guis = Ply:FindFirstChild("PlayerGui")
+
+local Filename = "Anime Adventure"
+
+local Ply = getgenv().Cloneref(game.Players.LocalPlayer)
+local Rep = getgenv().Cloneref(game:GetService("ReplicatedStorage"))
+local Runs = getgenv().Cloneref(game:GetService("RunService"))
+local Guis = getgenv().Cloneref(Ply:FindFirstChild("PlayerGui"))
 local Loads = require(Rep.src.Loader)
 local Cilent_Datas = Loads.load_client_service(script, "ItemInventoryServiceClient")
 local Allunits = require(Rep.src.Data.Units)
@@ -37,12 +52,20 @@ function Getunit_Selecttion()
         end
     end
 end
+
+local Tp = function(Pos)
+    local Char = Ply.Character
+    if Char 
+        and Char:FindFirstChild("HumanoidRootPart") then
+        Char:FindFirstChild("HumanoidRootPart").CFrame = Pos
+    end
+end
 task.spawn(function()  
     if workspace._MAP_CONFIG.IsLobby.Value == true then
         if not game:IsLoaded() then
             game.Loaded:Wait()
         end
-        Getunit_Selecttion()
+        --Getunit_Selecttion()
     else
         if not game:IsLoaded() then
             game.Loaded:Wait()
@@ -52,15 +75,8 @@ task.spawn(function()
         Getunit_Selecttion()
     end
 end)
---[[
-    for _,v in pairs(getgenv().Setting.Unit_Equip) do
-        if type(v) == 'table' then
-            for _,v2 in pairs(v) do
-                print(_,v2)
-            end
-        end
-    end
-]]
+local Maps = {}
+
 
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
@@ -72,88 +88,217 @@ local Window = Fluent:CreateWindow({
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = false,
-    Theme = "Amethyst",
+    Theme = "Light",
     MinimizeKey = Enum.KeyCode.LeftControl 
 })
 local Options = Fluent.Options
 
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "swords" }),
+    Main = Window:AddTab({ Title = "Plays", Icon = "play" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
+do 
+    Tabs.Main:AddSection("Auto Plays")
 
-local Dropdown = Tabs.Main:AddDropdown("Unit_Tabs", {
-    Title = "Select Units",
-    Values = {'1','2','3','4','5','6'},
-    Multi = true,
-    Default = {'1','2','3','4'},
-})
-Dropdown:SetValue({
-   ['1'] = true,
-   ['2'] = true,
-   ['3'] = true,
-   ['4'] = true
-})
+    local Dropdown = Tabs.Main:AddDropdown("Unit_Tabs", {
+        Title = "Select Units",
+        Values = {'1','2','3','4','5','6'},
+        Multi = true,
+        Default = getgenv().Setting.Select_tabs,
+    })
+    Dropdown:SetValue({
+    ['1'] = true,
+    ['2'] = true,
+    ['3'] = true,
+    ['4'] = true
+    })
 
-Dropdown:OnChanged(function(Value)
-    local Values = {}
-    for Value, State in next, Value do
-        table.insert(Values, Value)
-    end
-    getgenv().Setting.Select_tabs = Values
-    Getunit_Selecttion()
-end)
+    Dropdown:OnChanged(function(Value)
+        local Values = {}
+        for Value, State in next, Value do
+            table.insert(Values, Value)
+        end
+        getgenv().Setting.Select_tabs = Values
+        Getunit_Selecttion()
+    end)
 
-local Toggle = Tabs.Main:AddToggle("autoplay", {Title = "Strat Farm", Default = false })
-Toggle:OnChanged(function()
-    getgenv().Setting.Auto_Play = Options.autoplay.Value
-end)
-local Toggle2 = Tabs.Main:AddToggle("showplacement", {Title = "Show Unit Placement", Default = false })
-Toggle2:OnChanged(function()
-    getgenv().Setting.Show_unitplacement = Options.showplacement.Value
-    task.spawn(function()
-        if Options.showplacement.Value then
-            print(1)
-            for _, partTemplate in pairs(workspace:GetChildren()) do
-                if partTemplate.Name == "PathPart" or partTemplate.Name == "FarmTem" then 
-                    partTemplate.Transparency = 0
+    local Toggle = Tabs.Main:AddToggle("autoplay", {Title = "Auto Play", Default = getgenv().Setting.Auto_Play })
+    Toggle:OnChanged(function()
+        getgenv().Setting.Auto_Play = Options.autoplay.Value
+    end)
+    local Toggle2 = Tabs.Main:AddToggle("showplacement", {Title = "Show Unit Placement", Default = getgenv().Setting.Show_unitplacement })
+    Toggle2:OnChanged(function()
+        getgenv().Setting.Show_unitplacement = Options.showplacement.Value
+        task.spawn(function()
+            if Options.showplacement.Value then
+                print(1)
+                for _, partTemplate in pairs(workspace:GetChildren()) do
+                    if partTemplate.Name == "PathPart" or partTemplate.Name == "FarmTem" then 
+                        partTemplate.Transparency = 0
+                    end
+                end
+            else
+                for _, partTemplate in pairs(workspace:GetChildren()) do
+                    if partTemplate.Name == "PathPart" or partTemplate.Name == "FarmTem" then 
+                        partTemplate.Transparency = 1
+                    end
                 end
             end
-        else
-            for _, partTemplate in pairs(workspace:GetChildren()) do
-                if partTemplate.Name == "PathPart" or partTemplate.Name == "FarmTem" then 
-                    partTemplate.Transparency = 1
-                end
-            end
+        end)
+    end)
+
+    Tabs.Main:AddSection("Game Modes")
+
+    local Mode_Drop = Tabs.Main:AddDropdown("Mode_Tabs", {
+        Title = "Select Mode",
+        Values = { 'Story Mode' ,'Legend States', 'Infinite Mode' ,'Infinite Castle' ,'Raid', 'Challenge Mode','Holidays Event'},
+        Multi = false,
+        Default = getgenv().Setting.Gamemode_Select,
+    })
+    Mode_Drop:OnChanged(function(Value)
+        getgenv().Setting.Gamemode_Select = Options.Mode_Tabs.Value
+        if getgenv().Setting.Clear_map then
+            getgenv().Setting.Clear_map()
         end
     end)
-end)
+    local Diffi_Drop = Tabs.Main:AddDropdown("Diffi_Tabs", {
+        Title = "Select Difficulty",
+        Values = {'Normal','Hard'},
+        Multi = false,
+        Default = getgenv().Setting.Difficul_Select or "Normal",
+    })
+    Diffi_Drop:OnChanged(function(Value)
+        getgenv().Setting.Difficul_Select = Options.Diffi_Tabs.Value
+    end)
+    local Maps_Drop = Tabs.Main:AddDropdown("Maps_Tabs", {
+        Title = "Select Maps",
+        Values = Maps,
+        Multi = false,
+        Default = getgenv().Setting.Maps_Select,
+    })
 
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetLibrary(Fluent)
+    Maps_Drop:OnChanged(function(Value)
+        getgenv().Setting.Maps_Select = Options.Maps_Tabs.Value
+    end)
 
 
-SaveManager:IgnoreThemeSettings()
+    --Maps_Select_Level
+    local Levels_Drop = Tabs.Main:AddDropdown("Levels_Tabs", {
+        Title = "Select Levels",
+        Values = {"1","2",'3','4','5',"6"},
+        Multi = false,
+        Default = getgenv().Setting.Maps_Select_Level,
+    })
+
+    Levels_Drop:OnChanged(function(Value)
+        getgenv().Setting.Maps_Select_Level = Options.Levels_Tabs.Value
+    end)
+    -- Replay_methods
+    local ReplayMethods_Drop = Tabs.Main:AddDropdown("ReplayMethods_Drops", {
+        Title = "Select Replay Method",
+        Values = {"Replay then Game Finish","Replay then Game Lose"},
+        Multi = false,
+        Default = getgenv().Setting.Replay_methods,
+    })
+
+    ReplayMethods_Drop:OnChanged(function(Value)
+        getgenv().Setting.Replay_methods = Options.ReplayMethods_Drops.Value
+    end)
+    local autojoin_but = Tabs.Main:AddToggle("autojoin", {Title = "Auto Joins", Default = getgenv().Setting.Auto_Join })
+    autojoin_but:OnChanged(function()
+        getgenv().Setting.Auto_Join = Options.autojoin.Value
+        if getgenv().Setting.Hastptogamemode then 
+            getgenv().Setting.Hastptogamemode = false
+        end
+    end)
+    local autoselect_but = Tabs.Main:AddToggle("autoselect", {Title = "Auto Selects Maps", Default = getgenv().Setting.Auto_Selectmap })
+    autoselect_but:OnChanged(function()
+        getgenv().Setting.Auto_Selectmap = Options.autoselect.Value
+    end)
+    --Auto_Selectmap
+    local autoreplay_but = Tabs.Main:AddToggle("autoreplay", {Title = "Auto Replays", Default = getgenv().Setting.Auto_Replay })
+    autoreplay_but:OnChanged(function()
+        getgenv().Setting.Auto_Replay = Options.autoreplay.Value
+    end)
+    local Backtolobby_but = Tabs.Main:AddToggle("backtolobby", {Title = "Back To Lobby", Default = getgenv().Setting.Back_Tolobby })
+    Backtolobby_but:OnChanged(function()
+        getgenv().Setting.Back_Tolobby = Options.backtolobby.Value
+    end)
+    local Nextlevel_but = Tabs.Main:AddToggle("nextlevel", {Title = "Next level", Default = getgenv().Setting.Auto_Next_Level })
+    Nextlevel_but:OnChanged(function()
+        getgenv().Setting.Auto_Next_Level = Options.nextlevel.Value
+    end)
+    local Nextmap_but = Tabs.Main:AddToggle("nextmap", {Title = "Next Map", Default = getgenv().Setting.Auto_Nextmap })
+    Nextmap_but:OnChanged(function()
+        getgenv().Setting.Auto_Nextmap = Options.nextmap.Value
+    end)
+    local Worldskip_but = Tabs.Main:AddToggle("worldskip", {Title = "Auto World Skip", Default = getgenv().Setting.Auto_Worldskip })
+    Worldskip_but:OnChanged(function()
+        getgenv().Setting.Auto_Worldskip = Options.worldskip.Value
+    end)
+    local friendonly_but = Tabs.Main:AddToggle("freindonly", {Title = "Friends Onlys", Default = getgenv().Setting.friends_only })
+    friendonly_but:OnChanged(function()
+        getgenv().Setting.friends_only = Options.freindonly.Value
+    end)
+    --Auto_Next_Level= false,
+    --Auto_Nextmap = false,
+    --Auto_Worldskip = false,
+    --friends_only
+    getgenv().Setting.Clear_map = function()
+        local Storys = {"Planet Greenie","Walled City","Snowy Town","Sand Village"," Navy Bay","Fiend City",
+            "Spirit World","Alien Spaceship","Ant Kingdom","Dungeon Throne","Fabled Kingdom","Haunted Academy",
+            "Haunted Academy","Magic Hills","Magic Town","Mountain Temple","Puppet Island","Rain Village","Ruined City",
+            "Snowy Kingdom","Space Center","Virtual Dungeon"
+        }
+        table.sort(Storys)
+        if getgenv().Setting.Gamemode_Select 
+            == "Story Mode" then
+                Maps = Storys
+            else
+                Maps = Storys
+            end
+        Maps_Drop:SetValues(Maps)
+    end
 
 
-SaveManager:SetIgnoreIndexes({})
+
+    
+
+    
+    
+
+    ----
+    task.defer(function()
+        getgenv().Setting.Clear_map()
+    end)
+    SaveManager:SetLibrary(Fluent)
+    InterfaceManager:SetLibrary(Fluent)
 
 
-InterfaceManager:SetFolder("Xasalary")
-SaveManager:SetFolder("Xasalary/specific-game")
-
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
+    SaveManager:IgnoreThemeSettings()
 
 
-Window:SelectTab(1)
+    SaveManager:SetIgnoreIndexes({})
 
-Fluent:Notify({
-    Title = "Xasalary",
-    Content = "The script has been loaded.",
-    Duration = 8
-})
+
+    InterfaceManager:SetFolder("Xasalary")
+    SaveManager:SetFolder("Xasalary/ "..Filename.. "_" .. Ply.Name)
+
+    InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+    SaveManager:BuildConfigSection(Tabs.Settings)
+
+
+    Window:SelectTab(1)
+
+    Fluent:Notify({
+        Title = "Xasalary",
+        Content = "The script has been loaded.",
+        Duration = 8
+    })
+
+end
+
 
 
 local services = require(game.ReplicatedStorage.src.Loader)
@@ -829,20 +974,96 @@ task.spawn(function()
         end
     --end)
 end)
-
 --[[
-local args = {
-    [1] = workspace:WaitForChild("_UNITS"):WaitForChild("dio")
-}
-
-game:GetService("ReplicatedStorage"):WaitForChild("endpoints"):WaitForChild("client_to_server"):WaitForChild("upgrade_unit_ingame"):InvokeServer(unpack(args))
+    Gamemode_Select = nil,
+    Difficul_Select = nil,
+    Maps_Select = nil,
+    Maps_Select_Level = "1",
+    Auto_Join = false,
+    Auto_Selectmap = false,
+    Auto_Replay = false,
+    Back_Tolobby = false,
+    Auto_Next_Level= false,
+    Auto_Nextmap = false,
+    Auto_Worldskip = false,
+    friends_only = false,
+    Replay_methods = "Replay then Game Finish"
+    'Story Mode' ,'Legend States', 'Infinite Mode' ,'Infinite Castle' ,'Raid', 'Challenge Mode','Holidays Event'
 ]]
---[[
-    local args = {
-    [1] = "{269f004e-5d45-4b74-9c71-abce441e4a27}",
-    [2] = CFrame.new(-2951.002685546875, 91.80620574951172, -712.8732299804688, 1, 0, -0, -0, 1, -0, 0, 0, 1)
-}
+--workspace._LOBBIES.Story
+--Tp funct
 
-game:GetService("ReplicatedStorage"):WaitForChild("endpoints"):WaitForChild("client_to_server"):WaitForChild("spawn_unit"):InvokeServer(unpack(args))
+getgenv().Setting.Hastptogamemode = false
+task.spawn(function()
+    --pcall(function()
+        while wait() do
+            if getgenv().Setting.Auto_Join then
+                if getgenv().Setting.Gamemode_Select 
+                    == "Story Mode" then
+                        local Doors = nil
+                        for _,lobby in pairs(workspace._LOBBIES.Story:GetChildren()) do
+                            if lobby and lobby:FindFirstChild("Active") and 
+                                lobby:FindFirstChild("Active").Value == false then
+                                    Doors = lobby
+                                    break 
+                            end
+                        end
+                       
+                        if Doors 
+                            and Doors:FindFirstChild("Active") 
+                            and Doors:FindFirstChild("Active").Value == false 
+                            and not getgenv().Setting.Hastptogamemode then
+                                Tp(Doors:FindFirstChild("Door").CFrame)
+                                getgenv().Setting.Hastptogamemode = true
+                                task.wait(.5)
+                        end
+                        task.wait(1)
+                        task.spawn(function()
+                            if getgenv().Setting.Hastptogamemode 
+                                and getgenv().Setting.Auto_Selectmap then
+                                    for _,maps in pairs(Guis.LevelSelectGui.MapSelect.Main.Wrapper.Container:GetChildren()) do
+                                        local mapName = maps:FindFirstChild("Main") and maps.Main:FindFirstChild("Container") and maps.Main.Container:FindFirstChild("MapName")
+                                        if mapName and tostring(getgenv().Setting.Maps_Select) ==  mapName.Text then
+                                            --maps.Main.Container.MapName.Parent.Parent.Parent
+                                            --setclipboard(tostring(maps).."_".."level"..tostring(getgenv().Setting.Maps_Select_Level))
+                                            local args = {
+                                            [1] = tostring(Doors.Name),
+                                            [2] = tostring(maps).."_".."level".."_"..tostring(getgenv().Setting.Maps_Select_Level),
+                                            [3] = getgenv().Setting.friends_only,
+                                            [4] = getgenv().Setting.Difficul_Select
+                                            }
+                                            game:GetService("ReplicatedStorage")
+                                            :WaitForChild("endpoints")
+                                            :WaitForChild("client_to_server")
+                                            :WaitForChild("request_lock_level"):InvokeServer(unpack(args))
 
-]]
+                                            game:GetService("ReplicatedStorage")
+                                            :WaitForChild("endpoints")
+                                            :WaitForChild("client_to_server")
+                                            :WaitForChild("request_start_game")
+                                            :InvokeServer(tostring(Doors.Name))
+                                            
+                                           
+                                        end
+                                    end
+                
+                            end
+                        end)
+                elseif getgenv().Setting.Gamemode_Select  
+                    == "Legend States" then
+                elseif getgenv().Setting.Gamemode_Select  
+                    == "Infinite Mode" then
+                elseif getgenv().Setting.Gamemode_Select  
+                    == "Infinite Castle" then
+                elseif getgenv().Setting.Gamemode_Select  
+                    == "Raid" then
+                elseif getgenv().Setting.Gamemode_Select  
+                    == "Challenge Mode" then
+                elseif getgenv().Setting.Gamemode_Select  
+                    == "Holidays Event" then
+                end
+            end
+        end
+    --end)
+end)
+--game:GetService("ReplicatedStorage").endpoints.client_to_server.lobby_world_skip
